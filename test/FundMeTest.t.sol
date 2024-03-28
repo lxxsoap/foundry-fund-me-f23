@@ -12,6 +12,7 @@ contract FundMeTest is Test{
     function setUp() external{
          //属性赋值 我 -> FundMeTest -> Fundme
        //  f = new FundMe(0x694AA1769357215DE4FAC081bf1f309aDC325306);
+       //随脚本
        DeployFundMe deployFundMe = new DeployFundMe();
        f = deployFundMe.run();
     }
