@@ -1,5 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
+/**
+ * @title 众筹合约 
+ * @author Shaw
+ * @notice 用户可以将以太坊，polygon，avalanche等区块链加密货币发送到该合约，允许合约拥有者提取所有资金用于研发
+ */
 
 import {AggregatorV3Interface} from "lib/chainlink-brownie-contracts/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import {PriceConverter} from "./PriceConverter.sol";
@@ -9,14 +14,24 @@ error FundMe_NotOwner();
 contract FundMe {
     using PriceConverter for uint256;
 
-    mapping(address => uint256) public addressToAmountFunded;
-    address[] public funders;
+    mapping(address => uint256) private s_addressToAmountFunded;
+    address[] private s_funders;
 
     // Could we make this constant?  /* hint: no! We should make it immutable! */
     address public /* immutable */ i_owner;
     uint256 public constant MINIMUM_USD = 5 * 10 ** 18;
     AggregatorV3Interface private s_priceFeed;
     
+        // Functions Order:
+    //// constructor
+    //// receive
+    //// fallback
+    //// external
+    //// public
+    //// internal
+    //// private
+    //// view / pure
+
     //构造函数中加入参数,在script脚本调用时可以传入
     constructor(address priceFeed) {
         i_owner = msg.sender;
@@ -24,10 +39,10 @@ contract FundMe {
     }
 
     function fund() public payable {
+        //require关键字，这个合约里至少花费xx，第一个参数false则回滚并打印第二个参数里内容
         require(msg.value.getConversionRate(s_priceFeed) >= MINIMUM_USD, "You need to spend more ETH!");
-        // require(PriceConverter.getConversionRate(msg.value) >= MINIMUM_USD, "You need to spend more ETH!");
-        addressToAmountFunded[msg.sender] += msg.value;
-        funders.push(msg.sender);
+        s_addressToAmountFunded[msg.sender] += msg.value;
+        s_funders.push(msg.sender);
     }
     
     //不再写死地址
@@ -42,11 +57,11 @@ contract FundMe {
     }
     
     function withdraw() public onlyOwner {
-        for (uint256 funderIndex=0; funderIndex < funders.length; funderIndex++){
-            address funder = funders[funderIndex];
-            addressToAmountFunded[funder] = 0;
+        for (uint256 funderIndex=0; funderIndex < s_funders.length; funderIndex++){
+            address funder = s_funders[funderIndex];
+            s_addressToAmountFunded[funder] = 0;
         }
-        funders = new address[](0);
+        s_funders = new address[](0);
         // // transfer
         // payable(msg.sender).transfer(address(this).balance);
         
@@ -78,6 +93,29 @@ contract FundMe {
         fund();
     }
 
+     /** Getter Functions */
+
+    /**
+     * @notice Gets the amount that an address has funded
+     *  @param fundingAddress the address of the funder
+     *  @return the amount funded
+     */
+    function getAddressToAmountFunded(address fundingAddress) public view returns (uint256) {
+        return s_addressToAmountFunded[fundingAddress];
+    }
+
+       function getFunder(uint256 index) public view returns (address) {
+        return s_funders[index];
+    }
+
+       function getOwner() public view returns (address) {
+        return i_owner;
+    }
+
+    function getPriceFeed() public view returns (AggregatorV3Interface) {
+        return s_priceFeed;
+    }
+
 }
 
 // Concepts we didn't cover yet (will cover in later sections)
@@ -88,5 +126,6 @@ contract FundMe {
 // 5. abi.encode / decode
 // 6. Hash with keccak256
 // 7. Yul / Assembly
+
 
 
