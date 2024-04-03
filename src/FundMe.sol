@@ -13,12 +13,12 @@ error FundMe_NotOwner();
 
 contract FundMe {
     using PriceConverter for uint256;
-
+     //变量命名规则： storage的使用s_xxx
     mapping(address => uint256) private s_addressToAmountFunded;
     address[] private s_funders;
 
-    // Could we make this constant?  /* hint: no! We should make it immutable! */
-    address public /* immutable */ i_owner;
+    // 变量命名规则：immutable类型的使用i_xxx
+    address public  immutable  i_owner;
     uint256 public constant MINIMUM_USD = 5 * 10 ** 18;
     AggregatorV3Interface private s_priceFeed;
     
@@ -55,6 +55,20 @@ contract FundMe {
         if (msg.sender != i_owner) revert FundMe_NotOwner();
         _;
     }
+
+     function cheaperWithdraw() public onlyOwner {
+        address[] memory funders = s_funders;
+        // mappings can't be in memory, sorry!
+        for (uint256 funderIndex = 0; funderIndex < funders.length; funderIndex++) {
+            address funder = funders[funderIndex];
+            s_addressToAmountFunded[funder] = 0;
+        }
+        s_funders = new address[](0);
+        // payable(msg.sender).transfer(address(this).balance);
+        (bool success,) = i_owner.call{value: address(this).balance}("");
+        require(success);
+    }
+
     
     function withdraw() public onlyOwner {
         for (uint256 funderIndex=0; funderIndex < s_funders.length; funderIndex++){

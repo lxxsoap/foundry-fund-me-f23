@@ -6,7 +6,7 @@ import {FundMe} from "../src/FundMe.sol";
 import {DeployFundMe} from "../script/DeployFundMe.s.sol";
 
 contract FundMeTest is Test {
-    //属性
+    
     FundMe fundMe;
 
     uint256 public constant SEND_VALUE = 0.1 ether; // just a value to make sure we are sending enough!
